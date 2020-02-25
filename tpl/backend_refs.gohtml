@@ -6,13 +6,6 @@
 		</header>
 	</div>
 
-	<table class="count-list count-list-pages">
-		<tbody>
-			{{range $h := .Refs}}
-				{{$h}}<br>
-			{{end}}
-		</tbody>
-	</table>
-
+	<div class="chart-hbar" data-detail="/pages">{{horizontal_chart .Context .Refs .Total 0 1 true}}</div>
 
 {{- template "_backend_bottom.gohtml" . }}

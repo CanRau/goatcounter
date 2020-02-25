@@ -568,10 +568,11 @@ type Stats []struct {
 func (h *Stats) ListRefs(ctx context.Context, start, end time.Time) (int, int, error) {
 	err := zdb.MustGet(ctx).SelectContext(ctx, h, `
 		select ref as name, sum(count) as count from ref_stats
-		where site=$1 and day >= $2 and day <= $3
+		where site=$1 and day >= $2 and day <= $3 and ref not like $4
 		group by ref
 		order by count desc
-	`, MustGetSite(ctx).ID, start.Format("2006-01-02"), end.Format("2006-01-02"))
+	`, MustGetSite(ctx).ID, start.Format("2006-01-02"), end.Format("2006-01-02"),
+		MustGetSite(ctx).LinkDomain+"%")
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "Stats.ListBrowsers browsers")
 	}

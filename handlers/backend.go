@@ -120,6 +120,7 @@ func (h backend) Mount(r chi.Router, db zdb.DB) {
 			ap.Get("/browsers", zhttp.Wrap(h.browsers))
 			ap.Get("/sizes", zhttp.Wrap(h.sizes))
 			ap.Get("/locations", zhttp.Wrap(h.locations))
+			ap.Get("/ref-breakdown", zhttp.Wrap(h.refBreakdown))
 		}
 		{
 			af := a.With(loggedIn)
@@ -307,6 +308,14 @@ func (h backend) index(w http.ResponseWriter, r *http.Request) error {
 	showMoreLoc := len(locStat) > 0 && float32(locStat[len(locStat)-1].Count)/float32(totalLoc)*100 < 3.0
 	l = l.Since("locStat.List")
 
+	var topRefs goatcounter.Stats
+	//total, totalDisplay, err := topRefs.ListRefs(r.Context(), start, end)
+	_, _, err = topRefs.ListRefs(r.Context(), start, end)
+	if err != nil {
+		return err
+	}
+	l = l.Since("topRefs.List")
+
 	// Add refers.
 	sr := r.URL.Query().Get("showrefs")
 	var refs goatcounter.HitStats
@@ -344,12 +353,18 @@ func (h backend) index(w http.ResponseWriter, r *http.Request) error {
 		LocationStat      goatcounter.Stats
 		TotalLocation     int
 		ShowMoreLocations bool
+		TopRefs           goatcounter.Stats
 	}{newGlobals(w, r), sr, r.URL.Query().Get("hl-period"), start, end, filter,
 		pages, refs, moreRefs, total, totalDisplay, browsers, totalBrowsers,
-		subs, sizeStat, totalSize, locStat, totalLoc, showMoreLoc})
+		subs, sizeStat, totalSize, locStat, totalLoc, showMoreLoc, topRefs})
 	l = l.Since("zhttp.Template")
 	l.FieldsSince().Print("")
 	return x
+}
+
+func (h backend) refBreakdown(w http.ResponseWriter, r *http.Request) error {
+	//Could not load /ref-breakdown?name=Hacker%20News&total=45546&period-start=2020-01-25&period-end=2020-02-25: Not Found
+	return nil
 }
 
 func (h backend) byrefs(w http.ResponseWriter, r *http.Request) error {
@@ -387,7 +402,6 @@ func (h backend) byrefs(w http.ResponseWriter, r *http.Request) error {
 	filter := r.URL.Query().Get("filter")
 	l := zlog.Module("backend").Field("site", site.ID)
 
-	// XXX
 	var refs goatcounter.Stats
 	total, totalDisplay, err := refs.ListRefs(r.Context(), start, end)
 	if err != nil {
@@ -402,14 +416,14 @@ func (h backend) byrefs(w http.ResponseWriter, r *http.Request) error {
 
 	x := zhttp.Template(w, "backend_refs.gohtml", struct {
 		Globals
-		SelectedPeriod   string
-		PeriodStart      time.Time
-		PeriodEnd        time.Time
-		Filter           string
-		Refs             goatcounter.Stats
-		TotalHits        int
-		TotalHitsDisplay int
-		SubSites         []string
+		SelectedPeriod string
+		PeriodStart    time.Time
+		PeriodEnd      time.Time
+		Filter         string
+		Refs           goatcounter.Stats
+		Total          int
+		TotalDisplay   int
+		SubSites       []string
 	}{newGlobals(w, r), r.URL.Query().Get("hl-period"), start, end, filter,
 		refs, total, totalDisplay, subs})
 	l = l.Since("zhttp.Template")
