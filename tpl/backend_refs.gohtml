@@ -1,0 +1,18 @@
+{{- template "_backend_top.gohtml" . -}}
+
+	<div class="pages-list">
+		<header class="h2 header-pages">
+			<h2>Pages</h2>
+		</header>
+	</div>
+
+	<table class="count-list count-list-pages">
+		<tbody>
+			{{range $h := .Refs}}
+				{{$h}}<br>
+			{{end}}
+		</tbody>
+	</table>
+
+
+{{- template "_backend_bottom.gohtml" . }}
